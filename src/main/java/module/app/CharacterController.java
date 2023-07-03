@@ -1,9 +1,5 @@
 package module.app;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -30,6 +26,8 @@ public class CharacterController {
         characters.add(new Character(3, "Magicien 2", "magicien", 80));
         characters.add(new Character(4, "Guerrier 2", "guerrier", 120));
     }
+
+    private static List<Integer> idList = new ArrayList<>();
 
     @RequestMapping("/characters")
     public String getCharacters(Model model) {
@@ -58,10 +56,11 @@ public class CharacterController {
 
         String name = characterForm.getName();
         String type = characterForm.getType();
+        int id = idList.size() > 0 ? idList.get(0) : characters.size()+1;
 
         if(name != null && name.length()>0 //
                 && type != null && type.length()>0) {
-            Character newCharacter = new Character(characters.size()+1,name,type,150);
+            Character newCharacter = new Character(id,name,type,150);
             characters.add(newCharacter);
             restTemplate.postForObject("http://localhost:8080/characters", newCharacter, Object.class);
 
@@ -115,6 +114,8 @@ public class CharacterController {
 
         RestTemplate restTemplate = new RestTemplate();
         characters.removeIf(character -> character.getId() == id);
+        idList.add(id);
+
         restTemplate.delete(String.format("http://localhost:8080/characters/%s",id), Object.class);
 
         return "redirect:/characters";

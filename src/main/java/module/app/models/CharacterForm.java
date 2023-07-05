@@ -1,4 +1,4 @@
-package module.app;
+package module.app.models;
 
 public class CharacterForm {
 

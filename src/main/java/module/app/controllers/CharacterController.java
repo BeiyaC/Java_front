@@ -1,4 +1,7 @@
-package module.app;
+package module.app.controllers;
+import module.app.models.Character;
+import module.app.models.CharacterForm;
+import module.app.repositories.CharacterDAO;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,14 +21,7 @@ import java.util.Objects;
 @Controller
 public class CharacterController {
 
-    private static List<Character> characters = new ArrayList<>();
-
-    static {
-        characters.add(new Character(1, "Magicien 1", "magicien", 100));
-        characters.add(new Character(2, "Guerrier 1", "guerrier", 150));
-        characters.add(new Character(3, "Magicien 2", "magicien", 80));
-        characters.add(new Character(4, "Guerrier 2", "guerrier", 120));
-    }
+    CharacterDAO characterDAO = new CharacterDAO();
 
     private static List<Integer> idList = new ArrayList<>();
 
@@ -56,12 +52,15 @@ public class CharacterController {
 
         String name = characterForm.getName();
         String type = characterForm.getType();
-        int id = idList.size() > 0 ? idList.get(0) : characters.size()+1;
+        int id = idList.size() > 0 ? idList.get(0) : characterDAO.findAll().size()+1;
 
         if(name != null && name.length()>0 //
                 && type != null && type.length()>0) {
             Character newCharacter = new Character(id,name,type,150);
-            characters.add(newCharacter);
+            characterDAO.save(newCharacter);
+            if (idList.size() > 0){
+                idList.remove(0);
+            }
             restTemplate.postForObject("http://localhost:8080/characters", newCharacter, Object.class);
 
             return "redirect:/characters";
@@ -74,7 +73,7 @@ public class CharacterController {
     @RequestMapping(value = {"/updateCharacter/{id}"}, method = RequestMethod.GET)
     public String updateCharacter(Model model, @PathVariable("id") int id) {
 
-        for (Character character : characters) {
+        for (Character character : characterDAO.findAll()) {
             if (character.getId() == id) {
                 CharacterForm newCharacterForm = new CharacterForm();
                 newCharacterForm.setId(character.getId());
@@ -97,7 +96,7 @@ public class CharacterController {
         String name = characterForm.getName();
         String type = characterForm.getType();
 
-        for (Character character : characters) {
+        for (Character character : characterDAO.findAll()) {
             if (character.getId() == id) {
                 character.setName(name);
                 character.setType(type);
@@ -113,7 +112,7 @@ public class CharacterController {
     public String deleteCharacter(@PathVariable("id") int id) {
 
         RestTemplate restTemplate = new RestTemplate();
-        characters.removeIf(character -> character.getId() == id);
+        characterDAO.delete(id);
         idList.add(id);
 
         restTemplate.delete(String.format("http://localhost:8080/characters/%s",id), Object.class);
